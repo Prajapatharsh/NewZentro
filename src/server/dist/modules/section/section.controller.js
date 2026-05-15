@@ -95,7 +95,7 @@ class SectionController {
             });
         }));
         this.getSectionById = (0, asyncHandler_1.default)((req, res) => __awaiter(this, void 0, void 0, function* () {
-            const section = yield this.sectionService.getSectionById(Number(req.params.id));
+            const section = yield this.sectionService.getSectionById(req.params.id);
             (0, sendResponse_1.default)(res, 200, {
                 data: section,
                 message: "Section fetched successfully",

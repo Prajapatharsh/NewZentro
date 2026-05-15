@@ -24,12 +24,19 @@ export default function AuthProvider({
           dispatch(logout());
         }
       } catch (error: any) {
-        console.log("error: ", error);
-        // ✅ If it's a 401, user is unauthenticated — expected
-        if (error?.status === 401) {
+        // If it's a 401 or no token, user is unauthenticated — expected behavior
+        if (error?.status === 401 || error?.status === 'PARSING_ERROR') {
+          dispatch(logout());
+        } else if (error?.status === 'FETCH_ERROR') {
+          // Network issues, just logout or stay as guest
+          console.warn("Auth check: Network error (offline?)");
           dispatch(logout());
         } else {
-          console.error("Unexpected error during auth", error);
+          const errorMsg = error?.data?.message || error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
+          if (errorMsg !== '{}') {
+            console.error("Unexpected error during auth:", errorMsg);
+          }
+          dispatch(logout());
         }
       }
     })();

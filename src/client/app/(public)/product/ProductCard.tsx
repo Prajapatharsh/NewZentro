@@ -3,11 +3,12 @@ import React, { useEffect } from "react";
 import { Eye } from "lucide-react";
 import { Product } from "@/app/types/productTypes";
 import Image from "next/image";
-import Link from "next/link";
 import Rating from "@/app/components/feedback/Rating";
 import useTrackInteraction from "@/app/hooks/miscellaneous/useTrackInteraction";
 import { useRouter } from "next/navigation";
 import { generateProductPlaceholder } from "@/app/utils/placeholderImage";
+import { useAppSelector } from "@/app/hooks/state/useRedux";
+import useToast from "@/app/hooks/ui/useToast";
 
 interface ProductCardProps {
   product: Product;
@@ -15,13 +16,26 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const { trackInteraction } = useTrackInteraction();
+  const { user } = useAppSelector((state) => state.auth);
+  const { showToast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
     trackInteraction(product.id, "view");
   }, [product.id, trackInteraction]);
 
-  const handleClick = () => {
+  const handleClick = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (!user) {
+      showToast("Please sign in to view product details", "info");
+      router.push("/sign-in");
+      return;
+    }
+
     trackInteraction(product.id, "click");
     router.push(`/product/${product.slug}`);
   };
@@ -38,12 +52,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div
       className="group bg-white rounded-sm border border-gray-100 overflow-hidden
-       relative h-full flex flex-col"
-      onClick={handleClick}
+       relative h-full flex flex-col cursor-pointer"
+      onClick={() => handleClick()}
     >
       {/* Image Container */}
       <div className="relative w-full h-48 sm:h-[170px]  bg-gray-50 flex items-center justify-center overflow-hidden">
-        <Link href={`/product/${product.slug}`} className="block w-full h-full">
+        <div className="block w-full h-full relative">
           <Image
             src={
               product.variants[0]?.images[0] ||
@@ -58,7 +72,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               e.currentTarget.src = generateProductPlaceholder(product.name);
             }}
           />
-        </Link>
+        </div>
 
         {/* Product Flags */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
@@ -76,14 +90,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {/* Action Buttons */}
         <div className="absolute top-2 right-2 flex space-x-1 z-10">
-          <Link href={`/product/${product.slug}`}>
-            <div
-              className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm "
-              aria-label="View product details"
-            >
-              <Eye size={14} className="text-gray-700" />
-            </div>
-          </Link>
+          <div
+            onClick={(e) => handleClick(e)}
+            className="bg-white/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:bg-white transition-colors"
+            aria-label="View product details"
+          >
+            <Eye size={14} className="text-gray-700" />
+          </div>
         </div>
 
         {/* Stock Status */}
@@ -97,7 +110,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
 
       <div className="p-3 sm:p-4 lg:p-5 flex flex-col flex-grow">
-        <Link href={`/product/${product.slug}`} className="block flex-grow">
+        <div className="block flex-grow">
           <h3 className="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base mb-2 line-clamp-2 leading-tight">
             {product.name}
           </h3>
@@ -130,16 +143,16 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               {product.category.name}
             </div>
           )}
-        </Link>
+        </div>
 
         {/* Quick Actions */}
         <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-100">
           <button
             className="w-full bg-indigo-600 text-white py-2 sm:py-2.5 lg:py-3 rounded-sm
-              font-medium text-xs sm:text-sm"
+              font-medium text-xs sm:text-sm hover:bg-indigo-700 transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              handleClick();
+              handleClick(e);
             }}
           >
             View Details

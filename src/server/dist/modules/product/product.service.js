@@ -120,6 +120,7 @@ class ProductService {
     }
     createProduct(data) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
             const { variants } = data, productData = __rest(data, ["variants"]);
             if (!variants || variants.length === 0) {
                 throw new AppError_1.default(400, "At least one variant is required");
@@ -216,28 +217,53 @@ class ProductService {
                     throw new AppError_1.default(400, `Variant at index ${index} is missing required attributes: ${missingAttributes.join(", ")}`);
                 }
             });
-            // Create product and variants in a transaction
-            return database_config_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
-                const product = yield this.productRepository.createProduct(Object.assign(Object.assign({}, productData), { slug: (0, slugify_1.default)(productData.name) }));
-                for (const variant of variants) {
-                    yield this.variantRepository.createVariant({
-                        productId: product.id,
-                        sku: variant.sku,
-                        price: variant.price,
-                        stock: variant.stock,
-                        lowStockThreshold: variant.lowStockThreshold || 10,
-                        barcode: variant.barcode,
-                        warehouseLocation: variant.warehouseLocation,
-                        attributes: variant.attributes,
-                        images: variant.images || [],
-                    });
+            // Create product and variants
+            try {
+                return yield database_config_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                    const product = yield this.productRepository.createProduct(Object.assign(Object.assign({}, productData), { slug: (0, slugify_1.default)(productData.name) }));
+                    for (const variant of variants) {
+                        yield this.variantRepository.createVariant({
+                            productId: product.id,
+                            sku: variant.sku,
+                            price: variant.price,
+                            stock: variant.stock,
+                            lowStockThreshold: variant.lowStockThreshold || 10,
+                            barcode: variant.barcode,
+                            warehouseLocation: variant.warehouseLocation,
+                            attributes: variant.attributes,
+                            images: variant.images || [],
+                        });
+                    }
+                    return this.productRepository.findProductById(product.id);
+                }));
+            }
+            catch (error) {
+                if (((_a = error.message) === null || _a === void 0 ? void 0 : _a.includes("Transactions are not supported")) ||
+                    ((_c = (_b = error.meta) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.includes("Transactions are not supported"))) {
+                    console.warn("Transactions are not supported by this MongoDB deployment. Falling back to separate operations.");
+                    const product = yield this.productRepository.createProduct(Object.assign(Object.assign({}, productData), { slug: (0, slugify_1.default)(productData.name) }));
+                    for (const variant of variants) {
+                        yield this.variantRepository.createVariant({
+                            productId: product.id,
+                            sku: variant.sku,
+                            price: variant.price,
+                            stock: variant.stock,
+                            lowStockThreshold: variant.lowStockThreshold || 10,
+                            barcode: variant.barcode,
+                            warehouseLocation: variant.warehouseLocation,
+                            attributes: variant.attributes,
+                            images: variant.images || [],
+                        });
+                    }
+                    return this.productRepository.findProductById(product.id);
                 }
-                return this.productRepository.findProductById(product.id);
-            }));
+                throw error;
+            }
         });
     }
     updateProduct(productId, updatedData) {
         return __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
             const existingProduct = yield this.productRepository.findProductById(productId);
             if (!existingProduct) {
                 throw new AppError_1.default(404, "Product not found");
@@ -312,7 +338,7 @@ class ProductService {
                     }
                 });
             }
-            return database_config_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+            const performUpdate = () => __awaiter(this, void 0, void 0, function* () {
                 const updatedProduct = yield this.productRepository.updateProduct(productId, Object.assign(Object.assign({}, productData), (productData.name && { slug: (0, slugify_1.default)(productData.name) })));
                 if (variants) {
                     yield database_config_1.default.productVariant.deleteMany({ where: { productId } });
@@ -331,7 +357,20 @@ class ProductService {
                     }
                 }
                 return this.productRepository.findProductById(productId);
-            }));
+            });
+            try {
+                return yield database_config_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                    return yield performUpdate();
+                }));
+            }
+            catch (error) {
+                if (((_a = error.message) === null || _a === void 0 ? void 0 : _a.includes("Transactions are not supported")) ||
+                    ((_c = (_b = error.meta) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.includes("Transactions are not supported"))) {
+                    console.warn("Transactions are not supported by this MongoDB deployment. Falling back to separate operations for update.");
+                    return yield performUpdate();
+                }
+                throw error;
+            }
         });
     }
     bulkCreateProducts(file) {

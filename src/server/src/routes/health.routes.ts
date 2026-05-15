@@ -46,14 +46,18 @@ router.get("/health/detailed", async (req, res) => {
     logger.error("Database health check failed:", error);
   }
 
-  try {
-    // Check Redis connection
-    await redisClient.ping();
-    health.dependencies.redis = "connected";
-  } catch (error) {
-    health.dependencies.redis = "disconnected";
-    health.status = "DEGRADED";
-    logger.error("Redis health check failed:", error);
+  // Check Redis connection
+  if (redisClient) {
+    try {
+      await redisClient.ping();
+      health.dependencies.redis = "connected";
+    } catch (error) {
+      health.dependencies.redis = "disconnected";
+      health.status = "DEGRADED";
+      logger.error("Redis health check failed:", error);
+    }
+  } else {
+    health.dependencies.redis = "disabled";
   }
 
   const statusCode = health.status === "OK" ? 200 : 503;
@@ -65,7 +69,9 @@ router.get("/ready", async (req, res) => {
   try {
     // Check if all critical services are ready
     await connectDB();
-    await redisClient.ping();
+    if (redisClient) {
+      await redisClient.ping();
+    }
 
     res.status(200).json({
       status: "ready",

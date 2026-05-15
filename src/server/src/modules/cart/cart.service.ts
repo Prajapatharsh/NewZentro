@@ -13,46 +13,45 @@ export class CartService {
 
     let cart;
 
+    // 1. If logged in, prioritize user cart
     if (userId) {
       console.log("🔍 [CART SERVICE] Looking for cart by userId:", userId);
       cart = await this.cartRepository.getCartByUserId(userId);
       console.log("🔍 [CART SERVICE] Cart found by userId:", cart);
+      if (cart) return cart;
+    }
 
-      if (!cart) {
-        console.log(
-          "🔍 [CART SERVICE] No cart found by userId, creating new cart"
-        );
-        cart = await this.cartRepository.createCart({ userId });
-        console.log("🔍 [CART SERVICE] New cart created for userId:", cart);
-      }
-    } else if (sessionId) {
-      console.log(
-        "🔍 [CART SERVICE] Looking for cart by sessionId:",
-        sessionId
-      );
+    // 2. If not found (or guest), check by sessionId
+    if (sessionId) {
+      console.log("🔍 [CART SERVICE] Looking for cart by sessionId:", sessionId);
       cart = await this.cartRepository.getCartBySessionId(sessionId);
       console.log("🔍 [CART SERVICE] Cart found by sessionId:", cart);
 
-      if (!cart) {
-        console.log(
-          "🔍 [CART SERVICE] No cart found by sessionId, creating new cart"
-        );
-        cart = await this.cartRepository.createCart({ sessionId });
-        console.log("🔍 [CART SERVICE] New cart created for sessionId:", cart);
+      if (cart) {
+        // If we have a userId now (newly logged in), associate it
+        if (userId && !cart.userId) {
+          console.log("🔍 [CART SERVICE] Associating userId to existing session cart");
+          cart = await prisma.cart.update({
+            where: { id: cart.id },
+            data: { userId },
+            include: {
+              cartItems: { include: { variant: { include: { product: true } } } },
+            },
+          });
+        }
+        return cart;
       }
-    } else {
-      console.log(
-        "🔍 [CART SERVICE] ERROR: Neither userId nor sessionId provided"
-      );
+    }
+
+    // 3. Create new cart if neither found
+    if (!userId && !sessionId) {
+      console.log("🔍 [CART SERVICE] ERROR: Neither userId nor sessionId provided");
       throw new AppError(400, "User ID or Session ID is required");
     }
 
-    console.log("🔍 [CART SERVICE] Final cart to return:", cart);
-    console.log("🔍 [CART SERVICE] Cart ID:", cart?.id);
-    console.log("🔍 [CART SERVICE] Cart items count:", cart?.cartItems?.length);
-    console.log("🔍 [CART SERVICE] Cart items:", cart?.cartItems);
-
-    return cart;
+    console.log("🔍 [CART SERVICE] Creating new cart with:", { userId, sessionId });
+    // Always provide both if available to keepsessionId unique and associated
+    return await this.cartRepository.createCart({ userId, sessionId });
   }
 
   async logCartEvent(

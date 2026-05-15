@@ -23,6 +23,7 @@ const nextConfig: NextConfig = {
       "res.cloudinary.com",
       "pbs.twimg.com",
       "store.storeimages.cdn-apple.com",
+      "images.unsplash.com",
     ],
   },
 };

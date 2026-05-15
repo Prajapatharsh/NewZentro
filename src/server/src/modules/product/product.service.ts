@@ -227,29 +227,61 @@ export class ProductService {
       }
     });
 
-    // Create product and variants in a transaction
-    return prisma.$transaction(async (tx) => {
-      const product = await this.productRepository.createProduct({
-        ...productData,
-        slug: slugify(productData.name),
-      });
-
-      for (const variant of variants) {
-        await this.variantRepository.createVariant({
-          productId: product.id,
-          sku: variant.sku,
-          price: variant.price,
-          stock: variant.stock,
-          lowStockThreshold: variant.lowStockThreshold || 10,
-          barcode: variant.barcode,
-          warehouseLocation: variant.warehouseLocation,
-          attributes: variant.attributes,
-          images: variant.images || [],
+    // Create product and variants
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const product = await this.productRepository.createProduct({
+          ...productData,
+          slug: slugify(productData.name),
         });
-      }
 
-      return this.productRepository.findProductById(product.id);
-    });
+        for (const variant of variants) {
+          await this.variantRepository.createVariant({
+            productId: product.id,
+            sku: variant.sku,
+            price: variant.price,
+            stock: variant.stock,
+            lowStockThreshold: variant.lowStockThreshold || 10,
+            barcode: variant.barcode,
+            warehouseLocation: variant.warehouseLocation,
+            attributes: variant.attributes,
+            images: variant.images || [],
+          });
+        }
+
+        return this.productRepository.findProductById(product.id);
+      });
+    } catch (error: any) {
+      if (
+        error.message?.includes("Transactions are not supported") ||
+        error.meta?.message?.includes("Transactions are not supported")
+      ) {
+        console.warn(
+          "Transactions are not supported by this MongoDB deployment. Falling back to separate operations."
+        );
+        const product = await this.productRepository.createProduct({
+          ...productData,
+          slug: slugify(productData.name),
+        });
+
+        for (const variant of variants) {
+          await this.variantRepository.createVariant({
+            productId: product.id,
+            sku: variant.sku,
+            price: variant.price,
+            stock: variant.stock,
+            lowStockThreshold: variant.lowStockThreshold || 10,
+            barcode: variant.barcode,
+            warehouseLocation: variant.warehouseLocation,
+            attributes: variant.attributes,
+            images: variant.images || [],
+          });
+        }
+
+        return this.productRepository.findProductById(product.id);
+      }
+      throw error;
+    }
   }
 
   async updateProduct(
@@ -391,7 +423,7 @@ export class ProductService {
       });
     }
 
-    return prisma.$transaction(async (tx) => {
+    const performUpdate = async () => {
       const updatedProduct = await this.productRepository.updateProduct(
         productId,
         {
@@ -418,7 +450,24 @@ export class ProductService {
       }
 
       return this.productRepository.findProductById(productId);
-    });
+    };
+
+    try {
+      return await prisma.$transaction(async (tx) => {
+        return await performUpdate();
+      });
+    } catch (error: any) {
+      if (
+        error.message?.includes("Transactions are not supported") ||
+        error.meta?.message?.includes("Transactions are not supported")
+      ) {
+        console.warn(
+          "Transactions are not supported by this MongoDB deployment. Falling back to separate operations for update."
+        );
+        return await performUpdate();
+      }
+      throw error;
+    }
   }
 
   async bulkCreateProducts(file: Express.Multer.File) {

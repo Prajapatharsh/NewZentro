@@ -63,16 +63,16 @@ export const createApp = async () => {
   app.set("trust proxy", 1);
   app.use(
     session({
-      store: new RedisStore({ client: redisClient }),
+      store: redisClient ? new RedisStore({ client: redisClient }) : undefined,
       secret: process.env.SESSION_SECRET!,
       resave: false,
-      saveUninitialized: true, // Keeps guest sessionId from the first request
-      proxy: true, // Ensures secure cookies work with proxy
+      saveUninitialized: true,
+      proxy: true,
       cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // true in prod
-        sameSite: "none", // Required for cross-site cookies
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 7,
       },
     })
   );
@@ -85,10 +85,18 @@ export const createApp = async () => {
   // CORS must be applied BEFORE GraphQL setup
   app.use(
     cors({
-      origin:
-        process.env.NODE_ENV === "production"
-          ? ["https://ecommerce-nu-rosy.vercel.app"]
-          : ["http://localhost:3000", "http://localhost:5173"],
+      origin: (origin, callback) => {
+        if (process.env.NODE_ENV !== "production") {
+          // Allow all origins in development
+          return callback(null, true);
+        }
+        const allowedOrigins = ["https://ecommerce-nu-rosy.vercel.app"];
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: [

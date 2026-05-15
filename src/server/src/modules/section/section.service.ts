@@ -29,7 +29,7 @@ export class SectionService {
     return this.sectionRepository.create(data);
   }
 
-  async getSectionById(id: number) {
+  async getSectionById(id: string) {
     const section = await this.sectionRepository.findById(id);
     if (!section) throw new AppError(404, "Section not found");
     return section;

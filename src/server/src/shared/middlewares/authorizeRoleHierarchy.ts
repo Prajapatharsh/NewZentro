@@ -5,7 +5,7 @@ import prisma from "@/infra/database/database.config";
 const getRoleHierarchy = (role: string): number => {
   const hierarchy: { [key: string]: number } = {
     USER: 1,
-    ADMIN: 2,
+    ADMIN: 3,
     SUPERADMIN: 3,
   };
   return hierarchy[role] || 0;

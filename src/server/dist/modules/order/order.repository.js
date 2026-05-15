@@ -48,12 +48,16 @@ class OrderRepository {
     }
     createOrder(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return database_config_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+            var _a, _b, _c;
+            const performCreateOrder = (client) => __awaiter(this, void 0, void 0, function* () {
                 // Validate stock for all variants
                 for (const item of data.orderItems) {
-                    const variant = yield tx.productVariant.findUnique({
+                    const variant = yield client.productVariant.findUnique({
                         where: { id: item.variantId },
-                        select: { stock: true, product: { select: { id: true, salesCount: true } } },
+                        select: {
+                            stock: true,
+                            product: { select: { id: true, salesCount: true } },
+                        },
                     });
                     if (!variant) {
                         throw new Error(`Variant not found: ${item.variantId}`);
@@ -63,7 +67,7 @@ class OrderRepository {
                     }
                 }
                 // Create order
-                const order = yield tx.order.create({
+                const order = yield client.order.create({
                     data: {
                         userId: data.userId,
                         amount: data.amount,
@@ -78,23 +82,39 @@ class OrderRepository {
                 });
                 // Update stock and sales count
                 for (const item of data.orderItems) {
-                    const variant = yield tx.productVariant.findUnique({
+                    const variant = yield client.productVariant.findUnique({
                         where: { id: item.variantId },
-                        select: { stock: true, product: { select: { id: true, salesCount: true } } },
+                        select: {
+                            stock: true,
+                            product: { select: { id: true, salesCount: true } },
+                        },
                     });
                     if (variant) {
-                        yield tx.productVariant.update({
+                        yield client.productVariant.update({
                             where: { id: item.variantId },
                             data: { stock: variant.stock - item.quantity },
                         });
-                        yield tx.product.update({
+                        yield client.product.update({
                             where: { id: variant.product.id },
                             data: { salesCount: variant.product.salesCount + item.quantity },
                         });
                     }
                 }
                 return order;
-            }));
+            });
+            try {
+                return yield database_config_1.default.$transaction((tx) => __awaiter(this, void 0, void 0, function* () {
+                    return yield performCreateOrder(tx);
+                }));
+            }
+            catch (error) {
+                if (((_a = error.message) === null || _a === void 0 ? void 0 : _a.includes("Transactions are not supported")) ||
+                    ((_c = (_b = error.meta) === null || _b === void 0 ? void 0 : _b.message) === null || _c === void 0 ? void 0 : _c.includes("Transactions are not supported"))) {
+                    console.warn("Transactions are not supported by this MongoDB deployment. Falling back to separate operations for order creation.");
+                    return yield performCreateOrder(database_config_1.default);
+                }
+                throw error;
+            }
         });
     }
 }

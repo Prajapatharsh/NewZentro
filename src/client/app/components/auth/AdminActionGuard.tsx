@@ -39,8 +39,8 @@ const AdminActionGuard: React.FC<AdminActionGuardProps> = ({
   const hasPermission = (() => {
     switch (action) {
       case "create_admin":
-        // Only SUPERADMIN can create new admins
-        return user.role === "SUPERADMIN";
+        // Admin and SuperAdmin can create new admins (merging roles)
+        return user.role === "ADMIN" || user.role === "SUPERADMIN";
       case "delete_user":
         // ADMIN and SUPERADMIN can delete users (with hierarchy checks)
         return user.role === "ADMIN" || user.role === "SUPERADMIN";
@@ -58,9 +58,7 @@ const AdminActionGuard: React.FC<AdminActionGuardProps> = ({
           <div className="flex items-center justify-center p-6 bg-purple-50 rounded-lg border border-purple-200">
             <Crown className="w-5 h-5 text-purple-500 mr-2" />
             <span className="text-purple-700 text-sm">
-              {action === "create_admin"
-                ? "Only SuperAdmins can create new admins"
-                : "Admin privileges required for this action"}
+              Admin privileges required for this action
             </span>
           </div>
         )

@@ -106,9 +106,7 @@ export class SectionController {
   });
 
   getSectionById = asyncHandler(async (req: Request, res: Response) => {
-    const section = await this.sectionService.getSectionById(
-      Number(req.params.id)
-    );
+    const section = await this.sectionService.getSectionById(req.params.id);
     sendResponse(res, 200, {
       data: section,
       message: "Section fetched successfully",

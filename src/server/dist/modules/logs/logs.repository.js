@@ -53,13 +53,20 @@ class LogsRepository {
     }
     createLog(data) {
         return __awaiter(this, void 0, void 0, function* () {
-            return database_config_1.default.log.create({
-                data: {
-                    level: data.level,
-                    message: data.message,
-                    context: data.context,
-                },
-            });
+            try {
+                return yield database_config_1.default.log.create({
+                    data: {
+                        level: data.level,
+                        message: data.message,
+                        context: data.context,
+                    },
+                });
+            }
+            catch (error) {
+                console.error("Failed to save log to database:", error);
+                // Don't throw the error, just return null so the app doesn't crash
+                return null;
+            }
         });
     }
 }

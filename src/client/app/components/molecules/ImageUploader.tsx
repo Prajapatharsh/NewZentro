@@ -22,7 +22,7 @@ interface ImageUploaderProps {
 
 interface ImagePreview {
   url: string;
-  file: File;
+  file?: File;
 }
 
 const ImageUploader = ({
@@ -36,11 +36,40 @@ const ImageUploader = ({
 }: ImageUploaderProps) => {
   const [previews, setPreviews] = useState<ImagePreview[]>([]);
 
+  // Initialize previews from control value
+  useEffect(() => {
+    const currentValues = control._formValues;
+    const path = name.split('.');
+    let value = currentValues;
+    for (const part of path) {
+      if (value && typeof value === 'object') {
+        const match = part.match(/(.+)\[(\d+)\]/);
+        if (match) {
+          value = value[match[1]]?.[parseInt(match[2])];
+        } else {
+          value = value[part];
+        }
+      }
+    }
+
+    if (Array.isArray(value) && previews.length === 0) {
+      const initialPreviews = value.map((item: any) => {
+        if (item instanceof File) {
+          return { url: URL.createObjectURL(item), file: item };
+        }
+        return { url: item };
+      });
+      setPreviews(initialPreviews);
+    }
+  }, [control, name, previews.length]);
+
   // Cleanup blob URLs on unmount
   useEffect(() => {
     return () => {
       previews.forEach((preview) => {
-        URL.revokeObjectURL(preview.url);
+        if (preview.file) {
+          URL.revokeObjectURL(preview.url);
+        }
       });
     };
   }, [previews]);
@@ -51,8 +80,7 @@ const ImageUploader = ({
 
       if (!files.length) return;
 
-      const currentFiles = previews.map((p) => p.file);
-      const remainingSlots = maxFiles - currentFiles.length;
+      const remainingSlots = maxFiles - previews.length;
       const filesToAdd = files.slice(0, remainingSlots);
 
       if (filesToAdd.length < files.length) {
@@ -66,17 +94,10 @@ const ImageUploader = ({
         file,
       }));
 
-      const updatedFiles = [...currentFiles, ...filesToAdd];
-      console.log(
-        "handleFileUpload files:",
-        files,
-        "updatedFiles:",
-        updatedFiles
-      );
       const updatedPreviews = [...previews, ...newPreviews];
-
       setPreviews(updatedPreviews);
-      setValue(name, updatedFiles, { shouldValidate: true });
+      
+      setValue(name, updatedPreviews.map(p => p.file || p.url), { shouldValidate: true });
 
       // Clear the input
       e.target.value = "";
@@ -89,13 +110,15 @@ const ImageUploader = ({
       const updatedPreviews = [...previews];
       const removedPreview = updatedPreviews.splice(index, 1)[0];
 
-      // Revoke blob URL
-      URL.revokeObjectURL(removedPreview.url);
+      // Revoke blob URL if it was a file
+      if (removedPreview.file) {
+        URL.revokeObjectURL(removedPreview.url);
+      }
 
       setPreviews(updatedPreviews);
       setValue(
         name,
-        updatedPreviews.map((p) => p.file),
+        updatedPreviews.map((p) => p.file || p.url),
         { shouldValidate: true }
       );
     },
@@ -144,8 +167,8 @@ const ImageUploader = ({
               </button>
 
               {/* File indicator */}
-              <div className="absolute bottom-1 left-1 bg-green-500 text-white text-xs px-1.5 py-0.5 rounded">
-                New
+              <div className={`absolute bottom-1 left-1 ${preview.file ? 'bg-green-500' : 'bg-blue-500'} text-white text-[10px] px-1.5 py-0.5 rounded shadow-sm`}>
+                {preview.file ? 'New' : 'Existing'}
               </div>
             </div>
           ))}

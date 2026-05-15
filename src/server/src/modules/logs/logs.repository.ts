@@ -36,12 +36,18 @@ export class LogsRepository {
   }
 
   async createLog(data: LogEntry) {
-    return prisma.log.create({
-      data: {
-        level: data.level,
-        message: data.message,
-        context: data.context,
-      },
-    });
+    try {
+      return await prisma.log.create({
+        data: {
+          level: data.level,
+          message: data.message,
+          context: data.context,
+        },
+      });
+    } catch (error) {
+      console.error("Failed to save log to database:", error);
+      // Don't throw the error, just return null so the app doesn't crash
+      return null;
+    }
   }
 }

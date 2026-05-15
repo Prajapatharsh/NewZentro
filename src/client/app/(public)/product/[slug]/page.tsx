@@ -1,8 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import MainLayout from "@/app/components/templates/MainLayout";
 import BreadCrumb from "@/app/components/feedback/BreadCrumb";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import ProductImageGallery from "../ProductImageGallery";
 import ProductInfo from "../ProductInfo";
 import ProductReviews from "../ProductReviews";
@@ -11,14 +11,28 @@ import { generateProductPlaceholder } from "@/app/utils/placeholderImage";
 import { GET_SINGLE_PRODUCT } from "@/app/gql/Product";
 import ProductDetailSkeletonLoader from "@/app/components/feedback/ProductDetailSkeletonLoader";
 import { Product } from "@/app/types/productTypes";
+import { useAppSelector } from "@/app/hooks/state/useRedux";
+import useToast from "@/app/hooks/ui/useToast";
 
 const ProductDetailsPage = () => {
   const { slug } = useParams();
+  const router = useRouter();
+  const { user } = useAppSelector((state) => state.auth);
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    if (user === null || user === undefined) {
+      showToast("Please sign in to view product details", "info");
+      router.push("/sign-in");
+    }
+  }, [user, router, showToast]);
+
   const { data, loading, error } = useQuery<{ product: Product }>(
     GET_SINGLE_PRODUCT,
     {
       variables: { slug: typeof slug === "string" ? slug : slug?.[0] || "" },
       fetchPolicy: "no-cache",
+      skip: !user,
     }
   );
   console.log("product data:", data);

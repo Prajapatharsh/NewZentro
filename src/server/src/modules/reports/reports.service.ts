@@ -26,7 +26,7 @@ export class ReportsService {
     const cacheKey = `reports:sales:${timePeriod}:${year || "all"}:${
       startDate?.toISOString() || "none"
     }:${endDate?.toISOString() || "none"}`;
-    const cachedData = await redisClient.get(cacheKey);
+    const cachedData = redisClient ? await redisClient.get(cacheKey) : null;
 
     if (cachedData) {
       return JSON.parse(cachedData);
@@ -121,7 +121,9 @@ export class ReportsService {
       topProducts,
     };
 
-    await redisClient.setex(cacheKey, 300, JSON.stringify(result));
+    if (redisClient) {
+      await redisClient.setex(cacheKey, 300, JSON.stringify(result));
+    }
     return result;
   }
 
@@ -132,7 +134,7 @@ export class ReportsService {
     const cacheKey = `reports:user_retention:${timePeriod}:${year || "all"}:${
       startDate?.toISOString() || "none"
     }:${endDate?.toISOString() || "none"}`;
-    const cachedData = await redisClient.get(cacheKey);
+    const cachedData = redisClient ? await redisClient.get(cacheKey) : null;
 
     if (cachedData) {
       return JSON.parse(cachedData);
@@ -218,7 +220,9 @@ export class ReportsService {
       topUsers: topCustomers,
     };
 
-    await redisClient.setex(cacheKey, 300, JSON.stringify(result));
+    if (redisClient) {
+      await redisClient.setex(cacheKey, 300, JSON.stringify(result));
+    }
     return result;
   }
 

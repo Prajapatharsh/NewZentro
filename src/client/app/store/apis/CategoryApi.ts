@@ -18,20 +18,48 @@ export const categoriesApi = apiSlice.injectEndpoints({
     }),
 
     createCategory: builder.mutation({
-      query: (categoryData) => ({
-        url: "/categories",
-        method: "POST",
-        body: categoryData,
-      }),
+      query: (categoryData) => {
+        const formData = new FormData();
+        formData.append("name", categoryData.name);
+        if (categoryData.description) {
+          formData.append("description", categoryData.description);
+        }
+        if (categoryData.images && categoryData.images.length > 0) {
+          categoryData.images.forEach((image: any) => {
+            if (image instanceof File) {
+              formData.append("images", image);
+            } else {
+              formData.append("images", image);
+            }
+          });
+        }
+
+        return {
+          url: "/categories",
+          method: "POST",
+          body: formData,
+        };
+      },
       invalidatesTags: ["Category"],
     }),
 
     updateCategory: builder.mutation({
-      query: ({ id, categoryData }) => ({
-        url: `/categories/${id}`,
-        method: "PUT",
-        body: categoryData,
-      }),
+      query: ({ id, categoryData }) => {
+        const formData = new FormData();
+        if (categoryData.name) formData.append("name", categoryData.name);
+        if (categoryData.description) formData.append("description", categoryData.description);
+        if (categoryData.images && categoryData.images.length > 0) {
+          categoryData.images.forEach((image: any) => {
+            formData.append("images", image);
+          });
+        }
+
+        return {
+          url: `/categories/${id}`,
+          method: "PUT",
+          body: formData,
+        };
+      },
       invalidatesTags: ["Category"],
     }),
 

@@ -6,10 +6,6 @@ import { useRouter } from "next/navigation";
 import MainLayout from "@/app/components/templates/MainLayout";
 import { Loader2 } from "lucide-react";
 import { useSignInMutation } from "@/app/store/apis/AuthApi";
-import GoogleIcon from "@/app/assets/icons/google.png";
-import FacebookIcon from "@/app/assets/icons/facebook.png";
-import TwitterIcon from "@/app/assets/icons/twitter.png";
-import Image from "next/image";
 import { AUTH_API_BASE_URL } from "@/app/lib/constants/config";
 
 interface InputForm {
@@ -56,7 +52,7 @@ const SignIn = () => {
 
           {error && (
             <div className="bg-red-50 border border-red-300 text-red-600 text-center text-sm p-3 rounded mb-4">
-              An unexpected error occurred
+              {(error as any)?.data?.message || (error as any)?.message || "An unexpected error occurred"}
             </div>
           )}
 
@@ -122,10 +118,6 @@ const SignIn = () => {
             </h3>
             <div className="text-xs text-blue-700 space-y-1">
               <div>
-                <strong>Superadmin:</strong> superadmin@example.com /
-                password123
-              </div>
-              <div>
                 <strong>Admin:</strong> admin@example.com / password123
               </div>
               <div>
@@ -138,44 +130,6 @@ const SignIn = () => {
             </p>
           </div>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">or</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {[
-              {
-                provider: "google",
-                icon: GoogleIcon,
-                label: "Sign in with Google",
-              },
-              {
-                provider: "facebook",
-                icon: FacebookIcon,
-                label: "Sign in with Facebook",
-              },
-              {
-                provider: "twitter",
-                icon: TwitterIcon,
-                label: "Sign in with X",
-              },
-            ].map(({ provider, icon, label }) => (
-              <button
-                key={provider}
-                onClick={() => handleOAuthLogin(provider)}
-                className="w-full py-3 border-2 border-gray-100 bg-transparent text-black rounded-md font-medium hover:bg-gray-50
-                 transition-colors flex items-center justify-center gap-2 text-sm"
-              >
-                <Image width={20} height={20} src={icon} alt={provider} />
-                {label}
-              </button>
-            ))}
-          </div>
         </main>
       </div>
     </MainLayout>

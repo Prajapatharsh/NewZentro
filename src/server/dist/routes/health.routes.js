@@ -56,15 +56,20 @@ router.get("/health/detailed", (req, res) => __awaiter(void 0, void 0, void 0, f
         health.status = "DEGRADED";
         logger_1.default.error("Database health check failed:", error);
     }
-    try {
-        // Check Redis connection
-        yield redis_1.default.ping();
-        health.dependencies.redis = "connected";
+    // Check Redis connection
+    if (redis_1.default) {
+        try {
+            yield redis_1.default.ping();
+            health.dependencies.redis = "connected";
+        }
+        catch (error) {
+            health.dependencies.redis = "disconnected";
+            health.status = "DEGRADED";
+            logger_1.default.error("Redis health check failed:", error);
+        }
     }
-    catch (error) {
-        health.dependencies.redis = "disconnected";
-        health.status = "DEGRADED";
-        logger_1.default.error("Redis health check failed:", error);
+    else {
+        health.dependencies.redis = "disabled";
     }
     const statusCode = health.status === "OK" ? 200 : 503;
     res.status(statusCode).json(health);
@@ -74,7 +79,9 @@ router.get("/ready", (req, res) => __awaiter(void 0, void 0, void 0, function* (
     try {
         // Check if all critical services are ready
         yield (0, database_config_1.connectDB)();
-        yield redis_1.default.ping();
+        if (redis_1.default) {
+            yield redis_1.default.ping();
+        }
         res.status(200).json({
             status: "ready",
             timestamp: new Date().toISOString(),

@@ -27,6 +27,7 @@ import {
   Wifi,
   Bluetooth,
   Package,
+  Stethoscope,
 } from "lucide-react";
 
 // Category icon mapping for fallback
@@ -61,6 +62,7 @@ const categoryIcons: Record<string, React.ElementType> = {
   speakers: Speaker,
   keyboards: Keyboard,
   mousepads: Mouse,
+  healthcare: Stethoscope,
 };
 
 // Default icon for categories without specific mapping

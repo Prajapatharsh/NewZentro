@@ -51,19 +51,6 @@ const UserForm: React.FC<UserFormProps> = ({
 
     switch (currentUser.role) {
       case "SUPERADMIN":
-        return [
-          { value: "USER", label: "User", icon: <Users className="w-4 h-4" /> },
-          {
-            value: "ADMIN",
-            label: "Admin",
-            icon: <Shield className="w-4 h-4" />,
-          },
-          {
-            value: "SUPERADMIN",
-            label: "Super Admin",
-            icon: <Crown className="w-4 h-4" />,
-          },
-        ];
       case "ADMIN":
         return [
           { value: "USER", label: "User", icon: <Users className="w-4 h-4" /> },

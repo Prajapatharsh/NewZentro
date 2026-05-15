@@ -55,7 +55,6 @@ const Sidebar = () => {
         links: [
           { name: "Analytics", href: "/analytics", icon: ChartCandlestick },
           { name: "Reports", href: "/reports", icon: ClipboardPlus },
-          { name: "Logs", href: "/logs", icon: ClipboardCheck },
         ],
       },
     ],

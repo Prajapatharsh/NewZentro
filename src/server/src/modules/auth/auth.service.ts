@@ -18,8 +18,7 @@ export class AuthService {
     name,
     email,
     password,
-    role,
-  }: RegisterUserParams): Promise<AuthResponse> {
+  }: Omit<RegisterUserParams, 'role'>): Promise<AuthResponse> {
     const existingUser = await this.authRepository.findUserByEmail(email);
 
     if (existingUser) {
@@ -29,11 +28,13 @@ export class AuthService {
       );
     }
 
+    const hashedPassword = await passwordUtils.hashPassword(password);
+
     // Force new registrations to be USER role only for security
     const newUser = await this.authRepository.createUser({
       email,
       name,
-      password,
+      password: hashedPassword,
       role: ROLE.USER, // Ignore any role passed from client for security
     });
 

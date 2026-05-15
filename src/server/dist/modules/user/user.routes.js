@@ -62,7 +62,7 @@ router.get("/me", protect_1.default, userController.getMe);
  *       403:
  *         description: Forbidden. User does not have the required role.
  */
-router.post("/admin", protect_1.default, (0, authorizeRole_1.default)("SUPERADMIN"), (0, validateDto_1.validateDto)(user_dto_2.CreateAdminDto), userController.createAdmin);
+router.post("/admin", protect_1.default, (0, authorizeRole_1.default)("ADMIN", "SUPERADMIN"), (0, validateDto_1.validateDto)(user_dto_2.CreateAdminDto), userController.createAdmin);
 /**
  * @swagger
  * /users:

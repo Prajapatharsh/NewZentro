@@ -24,10 +24,13 @@ export const blacklistToken = async (
   token: string,
   ttl: number
 ): Promise<void> => {
-  await redisClient.set(`blacklist:${token}`, "blacklisted", "EX", ttl);
+  if (redisClient) {
+    await redisClient.set(`blacklist:${token}`, "blacklisted", "EX", ttl);
+  }
 };
 
 export const isTokenBlacklisted = async (token: string): Promise<boolean> => {
+  if (!redisClient) return false;
   try {
     const result = await redisClient.get(`blacklist:${token}`);
     return result !== null;

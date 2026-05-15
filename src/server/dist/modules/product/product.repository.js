@@ -42,13 +42,17 @@ class ProductRepository {
                     },
                 }
                 : {}));
-            return database_config_1.default.product.findMany({
+            const queryOptions = {
                 where: finalWhere,
                 orderBy,
                 skip,
                 take,
-                select,
-                include: {
+            };
+            if (select) {
+                queryOptions.select = select;
+            }
+            else {
+                queryOptions.include = {
                     variants: {
                         include: {
                             attributes: {
@@ -59,8 +63,9 @@ class ProductRepository {
                             },
                         },
                     },
-                },
-            });
+                };
+            }
+            return database_config_1.default.product.findMany(queryOptions);
         });
     }
     countProducts(params) {
@@ -149,7 +154,6 @@ class ProductRepository {
         return __awaiter(this, void 0, void 0, function* () {
             return database_config_1.default.product.createMany({
                 data,
-                skipDuplicates: true,
             });
         });
     }

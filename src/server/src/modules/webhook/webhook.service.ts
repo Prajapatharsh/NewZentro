@@ -168,9 +168,11 @@ export class WebhookService {
     });
 
     // Post-transaction actions
-    await redisClient.del("dashboard:year-range");
-    const keys = await redisClient.keys("dashboard:stats:*");
-    if (keys.length > 0) await redisClient.del(keys);
+    if (redisClient) {
+      await redisClient.del("dashboard:year-range");
+      const keys = await redisClient.keys("dashboard:stats:*");
+      if (keys.length > 0) await redisClient.del(keys);
+    }
 
     this.cartService.logCartEvent(cart.id, "CHECKOUT_COMPLETED", userId);
 

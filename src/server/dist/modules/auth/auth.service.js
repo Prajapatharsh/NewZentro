@@ -28,16 +28,17 @@ class AuthService {
         this.authRepository = authRepository;
     }
     registerUser(_a) {
-        return __awaiter(this, arguments, void 0, function* ({ name, email, password, role, }) {
+        return __awaiter(this, arguments, void 0, function* ({ name, email, password, }) {
             const existingUser = yield this.authRepository.findUserByEmail(email);
             if (existingUser) {
                 throw new AppError_1.default(400, "This email is already registered, please log in instead.");
             }
+            const hashedPassword = yield authUtils_1.passwordUtils.hashPassword(password);
             // Force new registrations to be USER role only for security
             const newUser = yield this.authRepository.createUser({
                 email,
                 name,
-                password,
+                password: hashedPassword,
                 role: client_1.ROLE.USER, // Ignore any role passed from client for security
             });
             const accessToken = authUtils_1.tokenUtils.generateAccessToken(newUser.id);

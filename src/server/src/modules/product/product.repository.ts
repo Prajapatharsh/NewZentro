@@ -165,7 +165,6 @@ export class ProductRepository {
   ) {
     return prisma.product.createMany({
       data,
-      skipDuplicates: true,
     });
   }
 

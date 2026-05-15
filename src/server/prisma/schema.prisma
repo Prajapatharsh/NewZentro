@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -45,7 +45,7 @@ enum CHAT_STATUS {
 }
 
 model User {
-  id                          String        @id @default(uuid())
+  id                          String        @id @default(auto()) @map("_id") @db.ObjectId
   googleId                    String?
   twitterId                   String?
   facebookId                  String?
@@ -69,12 +69,10 @@ model User {
   createdAt                   DateTime      @default(now())
   updatedAt                   DateTime      @updatedAt
   Restock                     Restock[]
-
-  @@index([email])
 }
 
 model Product {
-  id            String           @id @default(uuid())
+  id            String           @id @default(auto()) @map("_id") @db.ObjectId
   name          String           @unique
   description   String?
   slug          String           @unique
@@ -86,19 +84,17 @@ model Product {
   averageRating Float            @default(0)
   reviewCount   Int              @default(0)
   category      Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  categoryId    String?
+  categoryId    String?          @db.ObjectId
   variants      ProductVariant[]
   interactions  Interaction[]
   reviews       Review[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-
-  @@index([name, slug])
 }
 
 model ProductVariant {
-  id                String                    @id @default(uuid())
-  productId         String
+  id                String                    @id @default(auto()) @map("_id") @db.ObjectId
+  productId         String                    @db.ObjectId
   product           Product                   @relation(fields: [productId], references: [id], onDelete: Cascade)
   sku               String                    @unique
   images            String[]                  @default([])
@@ -119,7 +115,7 @@ model ProductVariant {
 }
 
 model Attribute {
-  id                String                    @id @default(uuid())
+  id                String                    @id @default(auto()) @map("_id") @db.ObjectId
   name              String                    @unique
   slug              String                    @unique
   values            AttributeValue[]
@@ -127,13 +123,11 @@ model Attribute {
   variantAttributes ProductVariantAttribute[]
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
-
-  @@index([name, slug])
 }
 
 model AttributeValue {
-  id                String                    @id @default(uuid())
-  attributeId       String
+  id                String                    @id @default(auto()) @map("_id") @db.ObjectId
+  attributeId       String                    @db.ObjectId
   attribute         Attribute                 @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   value             String
   slug              String                    @unique
@@ -145,12 +139,12 @@ model AttributeValue {
 }
 
 model ProductVariantAttribute {
-  id          String         @id @default(uuid())
-  variantId   String
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  variantId   String         @db.ObjectId
   variant     ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  attributeId String
+  attributeId String         @db.ObjectId
   attribute   Attribute      @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-  valueId     String
+  valueId     String         @db.ObjectId
   value       AttributeValue @relation(fields: [valueId], references: [id], onDelete: Cascade)
   createdAt   DateTime       @default(now())
 
@@ -159,7 +153,7 @@ model ProductVariantAttribute {
 }
 
 model Category {
-  id          String              @id @default(uuid())
+  id          String              @id @default(auto()) @map("_id") @db.ObjectId
   slug        String              @unique
   name        String
   description String?
@@ -168,27 +162,24 @@ model Category {
   attributes  CategoryAttribute[]
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
-
-  @@index([name, slug])
 }
 
 model CategoryAttribute {
-  id          String    @id @default(uuid())
-  categoryId  String
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId  String    @db.ObjectId
   category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  attributeId String
+  attributeId String    @db.ObjectId
   attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
   isRequired  Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
   @@unique([categoryId, attributeId])
-  @@index([categoryId, attributeId])
 }
 
 model StockMovement {
-  id        String         @id @default(uuid())
-  variantId String
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  variantId String         @db.ObjectId
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   quantity  Int
   reason    String
@@ -199,12 +190,12 @@ model StockMovement {
 }
 
 model Restock {
-  id        String         @id @default(uuid())
-  variantId String
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  variantId String         @db.ObjectId
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   quantity  Int
   notes     String?
-  userId    String?
+  userId    String?        @db.ObjectId
   user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt DateTime       @default(now())
 
@@ -212,10 +203,10 @@ model Restock {
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  userId    String
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  productId String
+  productId String   @db.ObjectId
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   rating    Int
   comment   String?
@@ -226,8 +217,8 @@ model Review {
 }
 
 model Order {
-  id          String       @id @default(uuid())
-  userId      String
+  id          String       @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String       @db.ObjectId
   amount      Float
   orderDate   DateTime     @default(now())
   status      String       @default("PENDING")
@@ -244,9 +235,9 @@ model Order {
 }
 
 model OrderItem {
-  id        String         @id @default(uuid())
-  orderId   String
-  variantId String
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String         @db.ObjectId
+  variantId String         @db.ObjectId
   quantity  Int
   price     Float
   order     Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
@@ -258,67 +249,63 @@ model OrderItem {
 }
 
 model Payment {
-  id        String         @id @default(uuid())
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
   method    String
   amount    Float
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    String         @db.ObjectId
   order     Order?         @relation("OrderPayment", fields: [orderId], references: [id], onDelete: SetNull)
-  orderId   String?        @unique
+  orderId   String?        @unique @db.ObjectId
   status    PAYMENT_STATUS @default(PENDING)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
-  @@index([userId, orderId])
+  @@index([userId])
 }
 
 model Address {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   city      String
   state     String
   country   String
   zip       String
   street    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
+  userId    String   @db.ObjectId
   order     Order?   @relation("OrderAddress", fields: [orderId], references: [id], onDelete: SetNull)
-  orderId   String?  @unique
+  orderId   String?  @unique @db.ObjectId
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId, orderId])
+  @@index([userId])
 }
 
 model Shipment {
-  id             String    @id @default(uuid())
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
   carrier        String
   trackingNumber String
   shippedDate    DateTime
   deliveryDate   DateTime?
   order          Order     @relation("OrderShipment", fields: [orderId], references: [id], onDelete: Cascade)
-  orderId        String    @unique
+  orderId        String    @unique @db.ObjectId
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-
-  @@index([orderId])
 }
 
 model Transaction {
-  id              String             @id @default(uuid())
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
   order           Order              @relation("OrderTransaction", fields: [orderId], references: [id], onDelete: Cascade)
-  orderId         String             @unique
+  orderId         String             @unique @db.ObjectId
   status          TRANSACTION_STATUS @default(PENDING)
   transactionDate DateTime           @default(now())
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
-
-  @@index([orderId])
 }
 
 model Cart {
-  id         String      @id @default(uuid())
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
   user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId     String?
+  userId     String?     @db.ObjectId
   sessionId  String?     @unique
   cartItems  CartItem[]
   cartEvents CartEvent[]
@@ -330,17 +317,16 @@ model Cart {
 }
 
 model CartItem {
-  id        String         @id @default(uuid())
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
   cart      Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  cartId    String
-  variantId String
+  cartId    String         @db.ObjectId
+  variantId String         @db.ObjectId
   variant   ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
   quantity  Int            @default(1)
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
   @@unique([cartId, variantId])
-  @@index([cartId, variantId])
 }
 
 enum CART_EVENT {
@@ -351,9 +337,9 @@ enum CART_EVENT {
 }
 
 model CartEvent {
-  id        String     @id @default(uuid())
-  cartId    String
-  userId    String?
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  cartId    String     @db.ObjectId
+  userId    String?    @db.ObjectId
   sessionId String?
   eventType CART_EVENT @default(PENDING)
   timestamp DateTime   @default(now())
@@ -363,11 +349,11 @@ model CartEvent {
 }
 
 model Interaction {
-  id        String   @id @default(uuid())
-  userId    String?
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?  @db.ObjectId
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   sessionId String?
-  productId String?
+  productId String?  @db.ObjectId
   product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   type      String
   createdAt DateTime @default(now())
@@ -376,10 +362,10 @@ model Interaction {
 }
 
 model Report {
-  id         String   @id @default(uuid())
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
   type       String
   format     String
-  userId     String
+  userId     String   @db.ObjectId
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   parameters Json
@@ -389,7 +375,7 @@ model Report {
 }
 
 model Log {
-  id        String   @id @default(uuid())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   level     String
   message   String
   context   Json?
@@ -404,7 +390,7 @@ enum SECTION_TYPE {
 }
 
 model Section {
-  id             Int          @id @unique @default(autoincrement())
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
   type           SECTION_TYPE @default(HERO)
   title          String?
   description    String?
@@ -418,8 +404,8 @@ model Section {
 }
 
 model Chat {
-  id        String        @id @default(uuid())
-  userId    String
+  id        String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String        @db.ObjectId
   user      User          @relation("UserChats", fields: [userId], references: [id], onDelete: Cascade)
   status    CHAT_STATUS   @default(OPEN)
   messages  ChatMessage[]
@@ -430,10 +416,10 @@ model Chat {
 }
 
 model ChatMessage {
-  id        String   @id @default(uuid())
-  chatId    String
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatId    String   @db.ObjectId
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  senderId  String
+  senderId  String   @db.ObjectId
   sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   content   String?
   type      String   @default("TEXT")

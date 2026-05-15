@@ -42,15 +42,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({
       return;
     }
     try {
-      const res = await addToCart({
+      await addToCart({
         variantId: selectedVariant.id,
         quantity: 1,
-      });
-      console.log(res);
+      }).unwrap();
       showToast("Product added to cart", "success");
     } catch (error: any) {
-      showToast(error.data?.message || "Failed to add to cart", "error");
-      console.error("Error adding to cart:", error);
+      showToast(error?.data?.message || error?.message || "Failed to add to cart", "error");
+      console.error("Error adding to cart:", error?.message || error);
     }
   };
 

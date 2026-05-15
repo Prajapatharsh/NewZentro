@@ -50,8 +50,8 @@ async function main() {
     create: {
       email: "superadmin@example.com",
       password: hashedPassword,
-      name: "Super Admin",
-      role: "SUPERADMIN",
+      name: "Secondary Admin",
+      role: "ADMIN",
     },
   });
 
@@ -85,7 +85,7 @@ async function main() {
       name: "Electronics",
       slug: "electronics",
       description: "Electronic devices and gadgets",
-      images: [],
+      images: ["https://images.unsplash.com/photo-1498049794561-7780e7231661?w=800"],
     },
   });
 
@@ -96,7 +96,7 @@ async function main() {
       name: "Clothing",
       slug: "clothing",
       description: "Fashion and apparel",
-      images: [],
+      images: ["https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800"],
     },
   });
 
@@ -107,7 +107,7 @@ async function main() {
       name: "Footwear",
       slug: "footwear",
       description: "Shoes and sneakers",
-      images: [],
+      images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"],
     },
   });
 
@@ -118,7 +118,7 @@ async function main() {
       name: "Furniture",
       slug: "furniture",
       description: "Home and office furniture",
-      images: [],
+      images: ["https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800"],
     },
   });
 
@@ -129,7 +129,7 @@ async function main() {
       name: "Accessories",
       slug: "accessories",
       description: "Fashion accessories and jewelry",
-      images: [],
+      images: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800"],
     },
   });
 
@@ -632,7 +632,6 @@ async function main() {
 
   // 6. Create 10 products with variants
   const products = [
-    // Electronics
     {
       name: "iPhone 16 Pro",
       slug: "iphone-16-pro",
@@ -649,6 +648,7 @@ async function main() {
           stock: 25,
           barcode: "1234567890001",
           warehouseLocation: "WH-1A",
+          images: ["https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800"],
           attributes: [
             { attributeId: storageAttribute.id, valueId: storage128GB.id },
             { attributeId: colorAttribute.id, valueId: colorBlack.id },
@@ -661,6 +661,7 @@ async function main() {
           stock: 20,
           barcode: "1234567890002",
           warehouseLocation: "WH-1B",
+          images: ["https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800"],
           attributes: [
             { attributeId: storageAttribute.id, valueId: storage256GB.id },
             { attributeId: colorAttribute.id, valueId: colorBlue.id },
@@ -685,6 +686,7 @@ async function main() {
           stock: 30,
           barcode: "1234567890003",
           warehouseLocation: "WH-2A",
+          images: ["https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800"],
           attributes: [
             { attributeId: storageAttribute.id, valueId: storage256GB.id },
             { attributeId: colorAttribute.id, valueId: colorGreen.id },
@@ -711,6 +713,7 @@ async function main() {
           stock: 50,
           barcode: "1234567890004",
           warehouseLocation: "WH-3A",
+          images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800"],
           attributes: [
             { attributeId: sizeAttribute.id, valueId: sizeS.id },
             { attributeId: colorAttribute.id, valueId: colorRed.id },
@@ -723,21 +726,10 @@ async function main() {
           stock: 45,
           barcode: "1234567890005",
           warehouseLocation: "WH-3B",
+          images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800"],
           attributes: [
             { attributeId: sizeAttribute.id, valueId: sizeM.id },
             { attributeId: colorAttribute.id, valueId: colorBlue.id },
-            { attributeId: materialAttribute.id, valueId: materialCotton.id },
-          ],
-        },
-        {
-          sku: "TSH-COT-BLACK-L",
-          price: 19.99,
-          stock: 40,
-          barcode: "1234567890006",
-          warehouseLocation: "WH-3C",
-          attributes: [
-            { attributeId: sizeAttribute.id, valueId: sizeL.id },
-            { attributeId: colorAttribute.id, valueId: colorBlack.id },
             { attributeId: materialAttribute.id, valueId: materialCotton.id },
           ],
         },
@@ -759,21 +751,10 @@ async function main() {
           stock: 35,
           barcode: "1234567890007",
           warehouseLocation: "WH-4A",
+          images: ["https://images.unsplash.com/photo-1542272604-787c3835535d?w=800"],
           attributes: [
             { attributeId: sizeAttribute.id, valueId: sizeM.id },
             { attributeId: colorAttribute.id, valueId: colorBlue.id },
-            { attributeId: materialAttribute.id, valueId: materialCotton.id },
-          ],
-        },
-        {
-          sku: "JNS-DEN-BLACK-34",
-          price: 59.99,
-          stock: 30,
-          barcode: "1234567890008",
-          warehouseLocation: "WH-4B",
-          attributes: [
-            { attributeId: sizeAttribute.id, valueId: sizeL.id },
-            { attributeId: colorAttribute.id, valueId: colorBlack.id },
             { attributeId: materialAttribute.id, valueId: materialCotton.id },
           ],
         },
@@ -797,29 +778,11 @@ async function main() {
           stock: 25,
           barcode: "1234567890009",
           warehouseLocation: "WH-5A",
+          images: ["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"],
           attributes: [
             { attributeId: sizeAttribute.id, valueId: sizeL.id },
             { attributeId: colorAttribute.id, valueId: colorWhite.id },
-            {
-              attributeId: materialAttribute.id,
-              valueId: materialPolyester.id,
-            },
-            { attributeId: brandAttribute.id, valueId: brandNike.id },
-          ],
-        },
-        {
-          sku: "NKE-AM-BLK-44",
-          price: 129.99,
-          stock: 20,
-          barcode: "1234567890010",
-          warehouseLocation: "WH-5B",
-          attributes: [
-            { attributeId: sizeAttribute.id, valueId: sizeXL.id },
-            { attributeId: colorAttribute.id, valueId: colorBlack.id },
-            {
-              attributeId: materialAttribute.id,
-              valueId: materialPolyester.id,
-            },
+            { attributeId: materialAttribute.id, valueId: materialPolyester.id },
             { attributeId: brandAttribute.id, valueId: brandNike.id },
           ],
         },
@@ -841,13 +804,11 @@ async function main() {
           stock: 15,
           barcode: "1234567890011",
           warehouseLocation: "WH-6A",
+          images: ["https://images.unsplash.com/photo-1587563871167-1ee9c731aefb?w=800"],
           attributes: [
             { attributeId: sizeAttribute.id, valueId: sizeL.id },
             { attributeId: colorAttribute.id, valueId: colorRed.id },
-            {
-              attributeId: materialAttribute.id,
-              valueId: materialPolyester.id,
-            },
+            { attributeId: materialAttribute.id, valueId: materialPolyester.id },
             { attributeId: brandAttribute.id, valueId: brandAdidas.id },
           ],
         },
@@ -871,6 +832,7 @@ async function main() {
           stock: 10,
           barcode: "1234567890012",
           warehouseLocation: "WH-7A",
+          images: ["https://images.unsplash.com/photo-1592078615290-033ee584e267?w=800"],
           attributes: [
             { attributeId: materialAttribute.id, valueId: materialWood.id },
             { attributeId: colorAttribute.id, valueId: colorBlack.id },
@@ -895,6 +857,7 @@ async function main() {
           stock: 8,
           barcode: "1234567890013",
           warehouseLocation: "WH-8A",
+          images: ["https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800"],
           attributes: [
             { attributeId: materialAttribute.id, valueId: materialMetal.id },
             { attributeId: colorAttribute.id, valueId: colorBlack.id },
@@ -921,17 +884,7 @@ async function main() {
           stock: 20,
           barcode: "1234567890014",
           warehouseLocation: "WH-9A",
-          attributes: [
-            { attributeId: materialAttribute.id, valueId: materialLeather.id },
-            { attributeId: colorAttribute.id, valueId: colorBlack.id },
-          ],
-        },
-        {
-          sku: "WLT-LTH-BRN-1",
-          price: 49.99,
-          stock: 18,
-          barcode: "1234567890015",
-          warehouseLocation: "WH-9B",
+          images: ["https://images.unsplash.com/photo-1627123424574-724758594e93?w=800"],
           attributes: [
             { attributeId: materialAttribute.id, valueId: materialLeather.id },
             { attributeId: colorAttribute.id, valueId: colorBlack.id },
@@ -955,19 +908,9 @@ async function main() {
           stock: 12,
           barcode: "1234567890016",
           warehouseLocation: "WH-10A",
+          images: ["https://images.unsplash.com/photo-1511499767390-a7335958beba?w=800"],
           attributes: [
             { attributeId: colorAttribute.id, valueId: colorBlack.id },
-            { attributeId: materialAttribute.id, valueId: materialMetal.id },
-          ],
-        },
-        {
-          sku: "SGL-YLW-1",
-          price: 89.99,
-          stock: 10,
-          barcode: "1234567890017",
-          warehouseLocation: "WH-10B",
-          attributes: [
-            { attributeId: colorAttribute.id, valueId: colorYellow.id },
             { attributeId: materialAttribute.id, valueId: materialMetal.id },
           ],
         },
@@ -1005,7 +948,7 @@ async function main() {
           lowStockThreshold: 10,
           barcode: variantData.barcode,
           warehouseLocation: variantData.warehouseLocation,
-          images: [],
+          images: variantData.images || [],
         },
       });
 

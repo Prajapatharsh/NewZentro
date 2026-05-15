@@ -3,11 +3,12 @@ import React, { useState } from "react";
 import {
   useGetAllCategoriesQuery,
   useCreateCategoryMutation,
+  useUpdateCategoryMutation,
   useDeleteCategoryMutation,
 } from "@/app/store/apis/CategoryApi";
 import Table from "@/app/components/layout/Table";
 import { motion } from "framer-motion";
-import { Tag, Trash2, Plus } from "lucide-react";
+import { Tag, Trash2, Plus, Edit } from "lucide-react";
 import { useForm } from "react-hook-form";
 import Modal from "@/app/components/organisms/Modal";
 import ConfirmModal from "@/app/components/organisms/ConfirmModal";
@@ -20,11 +21,14 @@ const CategoriesDashboard = () => {
   const { data, isLoading, error } = useGetAllCategoriesQuery({});
   const [createCategory, { isLoading: isCreating }] =
     useCreateCategoryMutation();
+  const [updateCategory, { isLoading: isUpdating }] =
+    useUpdateCategoryMutation();
   const [deleteCategory, { isLoading: isDeleting }] =
     useDeleteCategoryMutation();
   const categories = data?.categories || [];
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<CategoryFormData | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
@@ -46,14 +50,21 @@ const CategoriesDashboard = () => {
       label: "Description",
       sortable: true,
       render: (row) => (
-        <span className="font-medium text-gray-800">{row?.name || "N/A"}</span>
+        <span className="font-medium text-gray-800">{row?.description || "N/A"}</span>
       ),
     },
     {
       key: "actions",
       label: "Actions",
       render: (row) => (
-        <div className="flex space-x-2">
+        <div className="flex space-x-3">
+          <button
+            onClick={() => handleEdit(row)}
+            className="p-1 text-blue-500 hover:text-blue-600 transition-colors duration-200"
+            aria-label="Edit category"
+          >
+            <Edit size={18} />
+          </button>
           <button
             onClick={() => handleDeletePrompt(row?.id)}
             className="p-1 text-red-500 hover:text-red-600 transition-colors duration-200"
@@ -66,6 +77,21 @@ const CategoriesDashboard = () => {
       ),
     },
   ];
+
+  const handleEdit = (category: any) => {
+    setEditingCategory({
+      id: category.id,
+      name: category.name,
+      description: category.description || "",
+      images: category.images || [],
+    });
+    form.reset({
+      name: category.name,
+      description: category.description || "",
+      images: category.images || [],
+    });
+    setIsModalOpen(true);
+  };
 
   const handleDeletePrompt = (id: string) => {
     if (!id) return;
@@ -87,32 +113,23 @@ const CategoriesDashboard = () => {
   };
 
   const onSubmit = async (formData: CategoryFormData) => {
-    const payload = new FormData();
-
-    payload.append("name", formData.name || "");
-    payload.append("description", formData.description || "");
-
-    if (data.images && Array.isArray(data.images)) {
-      data.images.forEach((file: any) => {
-        if (file instanceof File) {
-          payload.append("images", file);
-        }
-      });
-    }
-
-    console.log("FormData payload:");
-    for (const [key, value] of payload.entries()) {
-      console.log(`${key}: ${value instanceof File ? value.name : value}`);
-    }
-
     try {
-      await createCategory(payload).unwrap();
-      setIsCreateModalOpen(false);
-      form.reset({ name: "" });
-      showToast("Category created successfully", "success");
+      if (editingCategory?.id) {
+        await updateCategory({
+          id: editingCategory.id,
+          categoryData: formData,
+        }).unwrap();
+        showToast("Category updated successfully", "success");
+      } else {
+        await createCategory(formData).unwrap();
+        showToast("Category created successfully", "success");
+      }
+      setIsModalOpen(false);
+      setEditingCategory(null);
+      form.reset({ name: "", description: "", images: [] });
     } catch (err) {
-      console.error("Failed to create category:", err);
-      showToast("Failed to create category", "error");
+      console.error("Failed to save category:", err);
+      showToast("Failed to save category", "error");
     }
   };
 
@@ -132,7 +149,11 @@ const CategoriesDashboard = () => {
           </h1>
         </div>
         <button
-          onClick={() => setIsCreateModalOpen(true)}
+          onClick={() => {
+            setEditingCategory(null);
+            form.reset({ name: "", description: "", images: [] });
+            setIsModalOpen(true);
+          }}
           className="bg-indigo-500 text-white px-4 py-2 rounded-lg hover:bg-indigo-600 transition-colors duration-300 flex items-center space-x-2"
         >
           <Plus size={18} />
@@ -167,19 +188,23 @@ const CategoriesDashboard = () => {
         />
       )}
 
-      {/* Create Category Modal */}
+      {/* Category Modal */}
       <Modal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+        open={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingCategory(null);
+        }}
       >
         <h2 className="text-xl font-bold text-gray-800 mb-6">
-          Create Category
+          {editingCategory ? "Edit Category" : "Create Category"}
         </h2>
         <CategoryForm
           form={form}
           onSubmit={onSubmit}
-          isLoading={isCreating}
-          submitLabel="Create"
+          isLoading={isCreating || isUpdating}
+          submitLabel={editingCategory ? "Update" : "Create"}
+          existingImages={editingCategory?.images}
         />
       </Modal>
 

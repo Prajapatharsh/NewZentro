@@ -30,10 +30,14 @@ function generateRefreshToken(id, absExp) {
     });
 }
 const blacklistToken = (token, ttl) => __awaiter(void 0, void 0, void 0, function* () {
-    yield redis_1.default.set(`blacklist:${token}`, "blacklisted", "EX", ttl);
+    if (redis_1.default) {
+        yield redis_1.default.set(`blacklist:${token}`, "blacklisted", "EX", ttl);
+    }
 });
 exports.blacklistToken = blacklistToken;
 const isTokenBlacklisted = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    if (!redis_1.default)
+        return false;
     try {
         const result = yield redis_1.default.get(`blacklist:${token}`);
         return result !== null;

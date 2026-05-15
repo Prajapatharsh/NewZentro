@@ -26,7 +26,7 @@ export class SectionRepository {
     return prisma.section.create({ data });
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     return prisma.section.findUnique({ where: { id } });
   }
 

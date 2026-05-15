@@ -50,7 +50,6 @@ const ProductsDashboard = () => {
     payload.append("isFeatured", data.isFeatured.toString());
     payload.append("categoryId", data.categoryId || "");
 
-    // Track image indexes for each variant
     let imageIndex = 0;
     data.variants.forEach((variant, index) => {
       payload.append(`variants[${index}][sku]`, variant.sku || "");
@@ -65,12 +64,11 @@ const ProductsDashboard = () => {
         `variants[${index}][warehouseLocation]`,
         variant.warehouseLocation || ""
       );
-      // Append attributes as JSON
       payload.append(
         `variants[${index}][attributes]`,
         JSON.stringify(variant.attributes || [])
       );
-      // Track image indexes for this variant
+
       if (Array.isArray(variant.images) && variant.images.length > 0) {
         const imageIndexes = variant.images
           .map((file) => {
@@ -90,19 +88,14 @@ const ProductsDashboard = () => {
       }
     });
 
-    // Log the payload for debugging
-    console.log("Creating product with payload:");
-    for (const [key, value] of payload.entries()) {
-      console.log(`${key}:`, value);
-    }
-
     try {
       await createProduct(payload).unwrap();
       setIsModalOpen(false);
       showToast("Product created successfully", "success");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to create product:", err);
-      showToast("Failed to create product", "error");
+      const message = err?.data?.message || err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      showToast(message, "error");
     }
   };
 
@@ -117,7 +110,50 @@ const ProductsDashboard = () => {
     payload.append("isBestSeller", data.isBestSeller.toString());
     payload.append("isFeatured", data.isFeatured.toString());
     payload.append("categoryId", data.categoryId || "");
-    payload.append("variants", JSON.stringify(data.variants));
+
+    let imageIndex = 0;
+    data.variants.forEach((variant, index) => {
+      payload.append(`variants[${index}][id]`, variant.id || "");
+      payload.append(`variants[${index}][sku]`, variant.sku || "");
+      payload.append(`variants[${index}][price]`, variant.price.toString());
+      payload.append(`variants[${index}][stock]`, variant.stock.toString());
+      payload.append(
+        `variants[${index}][lowStockThreshold]`,
+        variant.lowStockThreshold?.toString() || "10"
+      );
+      payload.append(`variants[${index}][barcode]`, variant.barcode || "");
+      payload.append(
+        `variants[${index}][warehouseLocation]`,
+        variant.warehouseLocation || ""
+      );
+      payload.append(
+        `variants[${index}][attributes]`,
+        JSON.stringify(variant.attributes || [])
+      );
+
+      const existingImages: string[] = [];
+      const newImageIndexes: number[] = [];
+
+      if (Array.isArray(variant.images)) {
+        variant.images.forEach((img) => {
+          if (img instanceof File) {
+            payload.append(`images`, img);
+            newImageIndexes.push(imageIndex++);
+          } else if (typeof img === "string") {
+            existingImages.push(img);
+          }
+        });
+      }
+
+      payload.append(
+        `variants[${index}][images]`,
+        JSON.stringify(existingImages)
+      );
+      payload.append(
+        `variants[${index}][imageIndexes]`,
+        JSON.stringify(newImageIndexes)
+      );
+    });
 
     try {
       await updateProduct({
@@ -127,9 +163,10 @@ const ProductsDashboard = () => {
       setIsModalOpen(false);
       setEditingProduct(null);
       showToast("Product updated successfully", "success");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to update product:", err);
-      showToast("Failed to update product", "error");
+      const message = err?.data?.message || err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+      showToast(message, "error");
     }
   };
 

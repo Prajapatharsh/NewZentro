@@ -14,27 +14,31 @@ function useStorage<T>(
       : window.sessionStorage
     : null;
 
-  const getStoredValue = (): T => {
-    if (!isClient || !storage) return initialValue;
-    try {
-      const item = storage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch (error) {
-      console.warn(`Error reading storage key "${key}":`, error);
-      return initialValue;
-    }
-  };
-
-  const [storedValue, setStoredValue] = useState<T>(getStoredValue);
+  const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     if (!isClient || !storage) return;
+    try {
+      const item = storage.getItem(key);
+      if (item) {
+        setStoredValue(JSON.parse(item));
+      }
+      setIsLoaded(true);
+    } catch (error) {
+      console.warn(`Error reading storage key "${key}":`, error);
+      setIsLoaded(true);
+    }
+  }, [key, isClient, storage]);
+
+  useEffect(() => {
+    if (!isClient || !storage || !isLoaded) return;
     try {
       storage.setItem(key, JSON.stringify(storedValue));
     } catch (error) {
       console.warn(`Error setting storage key "${key}":`, error);
     }
-  }, [key, storedValue, storage, isClient]);
+  }, [key, storedValue, storage, isClient, isLoaded]);
 
   return [storedValue, setStoredValue] as const;
 }

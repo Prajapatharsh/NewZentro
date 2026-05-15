@@ -163,10 +163,12 @@ class WebhookService {
                 return { order, payment, transaction, shipment, address };
             }));
             // Post-transaction actions
-            yield redis_1.default.del("dashboard:year-range");
-            const keys = yield redis_1.default.keys("dashboard:stats:*");
-            if (keys.length > 0)
-                yield redis_1.default.del(keys);
+            if (redis_1.default) {
+                yield redis_1.default.del("dashboard:year-range");
+                const keys = yield redis_1.default.keys("dashboard:stats:*");
+                if (keys.length > 0)
+                    yield redis_1.default.del(keys);
+            }
             this.cartService.logCartEvent(cart.id, "CHECKOUT_COMPLETED", userId);
             this.logsService.info("Webhook - Order processed successfully", {
                 userId,

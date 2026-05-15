@@ -65,20 +65,43 @@ export class ProductController {
         isBestSeller,
         isFeatured,
         categoryId,
-        variants: rawVariants,
       } = req.body;
+      // Parse variants from req.body
+      let variants = req.body.variants;
+      if (typeof variants === "string") {
+        try {
+          variants = JSON.parse(variants);
+        } catch (error) {
+          // If parsing fails, it might be the FormData format, so we'll try that next
+        }
+      }
+
+      if (!Array.isArray(variants)) {
+        // Try parsing from variants[0][sku] etc. (FormData format)
+        let parsedVariants: any[] = [];
+        for (const key in req.body) {
+          const match = key.match(/^variants\[(\d+)\]\[(\w+)\]$/);
+          if (match) {
+            const index = parseInt(match[1]);
+            const field = match[2];
+            if (!parsedVariants[index]) {
+              parsedVariants[index] = {};
+            }
+            parsedVariants[index][field] = req.body[key];
+          }
+        }
+        variants = parsedVariants.filter(Boolean);
+      }
 
       // Log for debugging
       console.log(
-        "req.body:",
-        JSON.stringify(req.body, null, 2),
-        "req.files:",
-        req.files
+        "Processed variants count:",
+        variants.length,
+        "req.files count:",
+        (req.files as any[])?.length || 0
       );
 
-      // Validate variants
-      const variants = rawVariants || [];
-      if (!Array.isArray(variants) || variants.length === 0) {
+      if (variants.length === 0) {
         throw new AppError(400, "At least one variant is required");
       }
 
@@ -169,16 +192,30 @@ export class ProductController {
 
       // Parse variants from req.body
       let parsedVariants: any[] = [];
-      for (const key in req.body) {
-        if (key.startsWith("variants[")) {
-          const match = key.match(/^variants\[(\d+)\]\[(\w+)\]$/);
-          if (match) {
-            const index = parseInt(match[1]);
-            const field = match[2];
-            if (!parsedVariants[index]) {
-              parsedVariants[index] = {};
+      if (req.body.variants) {
+        if (typeof req.body.variants === "string") {
+          try {
+            parsedVariants = JSON.parse(req.body.variants);
+          } catch (error) {
+            // Might be FormData format
+          }
+        } else if (Array.isArray(req.body.variants)) {
+          parsedVariants = req.body.variants;
+        }
+      }
+
+      if (parsedVariants.length === 0) {
+        for (const key in req.body) {
+          if (key.startsWith("variants[")) {
+            const match = key.match(/^variants\[(\d+)\]\[(\w+)\]$/);
+            if (match) {
+              const index = parseInt(match[1]);
+              const field = match[2];
+              if (!parsedVariants[index]) {
+                parsedVariants[index] = {};
+              }
+              parsedVariants[index][field] = req.body[key];
             }
-            parsedVariants[index][field] = req.body[key];
           }
         }
       }
@@ -250,67 +287,49 @@ export class ProductController {
                 ...bodyImages.filter((img: string) => img),
               ];
 
-              // Validate other fields
-              if (
-                !variant.sku ||
-                typeof variant.price !== "number" ||
-                typeof variant.stock !== "number"
-              ) {
+              // Parse numeric fields
+              const price = parseFloat(variant.price);
+              const stock = parseInt(variant.stock, 10);
+
+              // Validate numeric fields
+              if (!variant.sku || isNaN(price) || isNaN(stock)) {
                 throw new AppError(
                   400,
                   `Variant at index ${index} must have sku, price, and stock`
                 );
               }
-              if (variant.stock < 0) {
-                throw new AppError(
-                  400,
-                  `Variant at index ${index} must have a valid non-negative stock number`
-                );
-              }
 
-              // Validate attributes
-              let parsedAttributes;
-              try {
-                parsedAttributes =
-                  typeof variant.attributes === "string"
-                    ? JSON.parse(variant.attributes)
-                    : variant.attributes;
-                if (!Array.isArray(parsedAttributes)) {
+              // Parse and validate attributes
+              let parsedAttributes = variant.attributes || [];
+              if (typeof parsedAttributes === "string") {
+                try {
+                  parsedAttributes = JSON.parse(parsedAttributes);
+                } catch {
                   throw new AppError(
                     400,
-                    `Variant at index ${index} must have an attributes array`
+                    `Invalid attributes format at index ${index}`
                   );
                 }
-                parsedAttributes.forEach((attr: any, attrIndex: number) => {
-                  if (!attr.attributeId || !attr.valueId) {
-                    throw new AppError(
-                      400,
-                      `Invalid attribute structure in variant at index ${index}, attribute index ${attrIndex}`
-                    );
-                  }
-                });
-              } catch (error) {
-                throw new AppError(
-                  400,
-                  `Invalid attributes format at index ${index}`
-                );
               }
 
-              // Check for duplicate attributes
-              const attributeIds = parsedAttributes.map(
-                (attr: any) => attr.attributeId
-              );
-              if (new Set(attributeIds).size !== attributeIds.length) {
+              if (!Array.isArray(parsedAttributes)) {
                 throw new AppError(
                   400,
-                  `Duplicate attributes in variant at index ${index}`
+                  `Attributes at index ${index} must be an array`
                 );
               }
 
               return {
-                ...variant,
-                images: imageUrls,
+                sku: variant.sku,
+                price,
+                stock,
+                lowStockThreshold: variant.lowStockThreshold
+                  ? parseInt(variant.lowStockThreshold, 10)
+                  : 10,
+                barcode: variant.barcode,
+                warehouseLocation: variant.warehouseLocation,
                 attributes: parsedAttributes,
+                images: imageUrls,
               };
             })
           )

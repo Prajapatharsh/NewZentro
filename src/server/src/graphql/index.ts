@@ -17,10 +17,17 @@ export async function configureGraphQL(app: express.Application) {
   app.use(
     "/api/v1/graphql",
     cors({
-      origin:
-        process.env.NODE_ENV === "production"
-          ? ["https://ecommerce-nu-rosy.vercel.app"]
-          : ["http://localhost:3000", "http://localhost:5173"],
+      origin: (origin, callback) => {
+        if (process.env.NODE_ENV !== "production") {
+          return callback(null, true);
+        }
+        const allowedOrigins = ["https://ecommerce-nu-rosy.vercel.app"];
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: [

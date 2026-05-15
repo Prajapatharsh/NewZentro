@@ -53,12 +53,37 @@ class ProductController {
             });
         }));
         this.createProduct = (0, asyncHandler_1.default)((req, res) => __awaiter(this, void 0, void 0, function* () {
-            const { name, description, isNew, isTrending, isBestSeller, isFeatured, categoryId, variants: rawVariants, } = req.body;
+            var _a;
+            const { name, description, isNew, isTrending, isBestSeller, isFeatured, categoryId, } = req.body;
+            // Parse variants from req.body
+            let variants = req.body.variants;
+            if (typeof variants === "string") {
+                try {
+                    variants = JSON.parse(variants);
+                }
+                catch (error) {
+                    // If parsing fails, it might be the FormData format, so we'll try that next
+                }
+            }
+            if (!Array.isArray(variants)) {
+                // Try parsing from variants[0][sku] etc. (FormData format)
+                let parsedVariants = [];
+                for (const key in req.body) {
+                    const match = key.match(/^variants\[(\d+)\]\[(\w+)\]$/);
+                    if (match) {
+                        const index = parseInt(match[1]);
+                        const field = match[2];
+                        if (!parsedVariants[index]) {
+                            parsedVariants[index] = {};
+                        }
+                        parsedVariants[index][field] = req.body[key];
+                    }
+                }
+                variants = parsedVariants.filter(Boolean);
+            }
             // Log for debugging
-            console.log("req.body:", JSON.stringify(req.body, null, 2), "req.files:", req.files);
-            // Validate variants
-            const variants = rawVariants || [];
-            if (!Array.isArray(variants) || variants.length === 0) {
+            console.log("Processed variants count:", variants.length, "req.files count:", ((_a = req.files) === null || _a === void 0 ? void 0 : _a.length) || 0);
+            if (variants.length === 0) {
                 throw new AppError_1.default(400, "At least one variant is required");
             }
             // Upload images to Cloudinary
@@ -126,16 +151,31 @@ class ProductController {
             console.log("req.body:", req.body, "req.files:", req.files);
             // Parse variants from req.body
             let parsedVariants = [];
-            for (const key in req.body) {
-                if (key.startsWith("variants[")) {
-                    const match = key.match(/^variants\[(\d+)\]\[(\w+)\]$/);
-                    if (match) {
-                        const index = parseInt(match[1]);
-                        const field = match[2];
-                        if (!parsedVariants[index]) {
-                            parsedVariants[index] = {};
+            if (req.body.variants) {
+                if (typeof req.body.variants === "string") {
+                    try {
+                        parsedVariants = JSON.parse(req.body.variants);
+                    }
+                    catch (error) {
+                        // Might be FormData format
+                    }
+                }
+                else if (Array.isArray(req.body.variants)) {
+                    parsedVariants = req.body.variants;
+                }
+            }
+            if (parsedVariants.length === 0) {
+                for (const key in req.body) {
+                    if (key.startsWith("variants[")) {
+                        const match = key.match(/^variants\[(\d+)\]\[(\w+)\]$/);
+                        if (match) {
+                            const index = parseInt(match[1]);
+                            const field = match[2];
+                            if (!parsedVariants[index]) {
+                                parsedVariants[index] = {};
+                            }
+                            parsedVariants[index][field] = req.body[key];
                         }
-                        parsedVariants[index][field] = req.body[key];
                     }
                 }
             }
@@ -188,40 +228,38 @@ class ProductController {
                         ...imageUrls,
                         ...bodyImages.filter((img) => img),
                     ];
-                    // Validate other fields
-                    if (!variant.sku ||
-                        typeof variant.price !== "number" ||
-                        typeof variant.stock !== "number") {
+                    // Parse numeric fields
+                    const price = parseFloat(variant.price);
+                    const stock = parseInt(variant.stock, 10);
+                    // Validate numeric fields
+                    if (!variant.sku || isNaN(price) || isNaN(stock)) {
                         throw new AppError_1.default(400, `Variant at index ${index} must have sku, price, and stock`);
                     }
-                    if (variant.stock < 0) {
-                        throw new AppError_1.default(400, `Variant at index ${index} must have a valid non-negative stock number`);
-                    }
-                    // Validate attributes
-                    let parsedAttributes;
-                    try {
-                        parsedAttributes =
-                            typeof variant.attributes === "string"
-                                ? JSON.parse(variant.attributes)
-                                : variant.attributes;
-                        if (!Array.isArray(parsedAttributes)) {
-                            throw new AppError_1.default(400, `Variant at index ${index} must have an attributes array`);
+                    // Parse and validate attributes
+                    let parsedAttributes = variant.attributes || [];
+                    if (typeof parsedAttributes === "string") {
+                        try {
+                            parsedAttributes = JSON.parse(parsedAttributes);
                         }
-                        parsedAttributes.forEach((attr, attrIndex) => {
-                            if (!attr.attributeId || !attr.valueId) {
-                                throw new AppError_1.default(400, `Invalid attribute structure in variant at index ${index}, attribute index ${attrIndex}`);
-                            }
-                        });
+                        catch (_c) {
+                            throw new AppError_1.default(400, `Invalid attributes format at index ${index}`);
+                        }
                     }
-                    catch (error) {
-                        throw new AppError_1.default(400, `Invalid attributes format at index ${index}`);
+                    if (!Array.isArray(parsedAttributes)) {
+                        throw new AppError_1.default(400, `Attributes at index ${index} must be an array`);
                     }
-                    // Check for duplicate attributes
-                    const attributeIds = parsedAttributes.map((attr) => attr.attributeId);
-                    if (new Set(attributeIds).size !== attributeIds.length) {
-                        throw new AppError_1.default(400, `Duplicate attributes in variant at index ${index}`);
-                    }
-                    return Object.assign(Object.assign({}, variant), { images: imageUrls, attributes: parsedAttributes });
+                    return {
+                        sku: variant.sku,
+                        price,
+                        stock,
+                        lowStockThreshold: variant.lowStockThreshold
+                            ? parseInt(variant.lowStockThreshold, 10)
+                            : 10,
+                        barcode: variant.barcode,
+                        warehouseLocation: variant.warehouseLocation,
+                        attributes: parsedAttributes,
+                        images: imageUrls,
+                    };
                 })))
                 : undefined;
             if (processedVariants) {

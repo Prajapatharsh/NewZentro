@@ -7,7 +7,7 @@ export class CartRepository {
     console.log("🔍 [CART REPOSITORY] userId:", userId);
 
     const cart = await prisma.cart.findFirst({
-      where: { userId },
+      where: { userId, status: "ACTIVE" },
       include: {
         cartItems: { include: { variant: { include: { product: true } } } },
       },

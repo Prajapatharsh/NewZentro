@@ -27,7 +27,6 @@ export class AuthController {
         name,
         email,
         password,
-        role,
       });
 
     res.cookie("refreshToken", refreshToken, cookieOptions);

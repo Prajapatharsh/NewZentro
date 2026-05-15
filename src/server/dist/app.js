@@ -64,16 +64,16 @@ const createApp = () => __awaiter(void 0, void 0, void 0, function* () {
     app.use((0, cookie_parser_1.default)(process.env.COOKIE_SECRET, constants_1.cookieParserOptions));
     app.set("trust proxy", 1);
     app.use((0, express_session_1.default)({
-        store: new connect_redis_1.RedisStore({ client: redis_1.default }),
+        store: redis_1.default ? new connect_redis_1.RedisStore({ client: redis_1.default }) : undefined,
         secret: process.env.SESSION_SECRET,
         resave: false,
-        saveUninitialized: true, // Keeps guest sessionId from the first request
-        proxy: true, // Ensures secure cookies work with proxy
+        saveUninitialized: true,
+        proxy: true,
         cookie: {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // true in prod
-            sameSite: "none", // Required for cross-site cookies
-            maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "none",
+            maxAge: 1000 * 60 * 60 * 24 * 7,
         },
     }));
     app.use(passport_1.default.initialize());
@@ -82,9 +82,19 @@ const createApp = () => __awaiter(void 0, void 0, void 0, function* () {
     // Preflight handler removed to avoid conflicts
     // CORS must be applied BEFORE GraphQL setup
     app.use((0, cors_1.default)({
-        origin: process.env.NODE_ENV === "production"
-            ? ["https://ecommerce-nu-rosy.vercel.app"]
-            : ["http://localhost:3000", "http://localhost:5173"],
+        origin: (origin, callback) => {
+            if (process.env.NODE_ENV !== "production") {
+                // Allow all origins in development
+                return callback(null, true);
+            }
+            const allowedOrigins = ["https://ecommerce-nu-rosy.vercel.app"];
+            if (!origin || allowedOrigins.includes(origin)) {
+                callback(null, true);
+            }
+            else {
+                callback(new Error("Not allowed by CORS"));
+            }
+        },
         credentials: true,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allowedHeaders: [

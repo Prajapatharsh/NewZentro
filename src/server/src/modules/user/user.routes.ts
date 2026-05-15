@@ -63,7 +63,7 @@ router.get("/me", protect, userController.getMe);
 router.post(
   "/admin",
   protect,
-  authorizeRole("SUPERADMIN"),
+  authorizeRole("ADMIN", "SUPERADMIN"),
   validateDto(CreateAdminDto),
   userController.createAdmin
 );
