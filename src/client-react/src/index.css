@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "nprogress/nprogress.css";
+
+:root {
+  --color-primary: #6366f1;
+  --color-secondary: #d2b48c;
+  --color-background: #f8f8f8dd;
+  --color-text: #2e2e2e;
+  --primary: var(--color-primary);
+  --font-poppins: "Poppins", sans-serif;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-poppins);
+  margin: 0;
+}

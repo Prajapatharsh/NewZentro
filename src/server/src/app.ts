@@ -64,15 +64,14 @@ export const createApp = async () => {
   app.use(
     session({
       store: redisClient ? new RedisStore({ client: redisClient }) : undefined,
-      secret: process.env.SESSION_SECRET!,
-      resave: false,
+      secret: process.env.SESSION_SECRET || "zentro-secret",
+      resave: true,
       saveUninitialized: true,
-      proxy: true,
       cookie: {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-        maxAge: 1000 * 60 * 60 * 24 * 7,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
       },
     })
   );
@@ -85,25 +84,14 @@ export const createApp = async () => {
   // CORS must be applied BEFORE GraphQL setup
   app.use(
     cors({
-      origin: (origin, callback) => {
-        if (process.env.NODE_ENV !== "production") {
-          // Allow all origins in development
-          return callback(null, true);
-        }
-        const allowedOrigins = ["https://ecommerce-nu-rosy.vercel.app"];
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
+      origin: true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: [
         "Content-Type",
         "Authorization",
         "X-Requested-With",
-        "Apollo-Require-Preflight", // For GraphQL
+        "Apollo-Require-Preflight",
       ],
     })
   );

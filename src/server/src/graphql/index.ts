@@ -16,27 +16,6 @@ export async function configureGraphQL(app: express.Application) {
 
   app.use(
     "/api/v1/graphql",
-    cors({
-      origin: (origin, callback) => {
-        if (process.env.NODE_ENV !== "production") {
-          return callback(null, true);
-        }
-        const allowedOrigins = ["https://ecommerce-nu-rosy.vercel.app"];
-        if (!origin || allowedOrigins.includes(origin)) {
-          callback(null, true);
-        } else {
-          callback(new Error("Not allowed by CORS"));
-        }
-      },
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      allowedHeaders: [
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Apollo-Require-Preflight",
-      ],
-    }),
     bodyParser.json(),
     expressMiddleware(apolloServer, {
       context: async ({ req, res }) => ({
